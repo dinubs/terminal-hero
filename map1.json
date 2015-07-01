@@ -1,0 +1,18 @@
+{
+	"config": {
+		"name": "First Level",
+		"startX": 1,
+		"startY": 1,
+		"endX": 5,
+		"endY": 5,
+		"nextMap": "./map2.json"
+	},
+	"tiles": {
+		"1x2": "█",
+		"2x2": "█",
+		"3x2": "█",
+		"4x2": "█",
+		"5x2": "x",
+		"5x5": "★"
+	}
+}

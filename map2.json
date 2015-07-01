@@ -1,0 +1,18 @@
+{
+	"config": {
+		"name": "Second Level",
+		"startX": 1,
+		"startY": 1,
+		"endX": 5,
+		"endY": 3,
+		"nextMap": "./map1.json"
+	},
+	"tiles": {
+		"1x3": "█",
+		"2x3": "█",
+		"3x3": "█",
+		"4x4": "█",
+		"5x1": "x",
+		"5x3": "★"
+	}
+}
