@@ -1,7 +1,8 @@
 var term = require('terminal-kit').terminal
 var keypress = require('keypress')
   , tty = require('tty');
-var map = require("./map1.json");
+var map = require("./map1.js");
+var tiles = require("./tilesettings.json");
 var config = require("./config.json");
 var x = 0, y = 0, name = "";
 
@@ -44,11 +45,12 @@ canMove = function(direction) {
 	var key = lX + "x" + lY;
 	if ((y-1 === 0 && direction === "up") || (y === term.height-1 && direction === "down") ||
 		(x-1===0 && direction === "left") || (x === term.width-1 && direction === "right")) {
-		return false;
-	} else if (map.tiles[key] === "█") {
 		term.bell();
 		return false;
-	} else if (map.tiles[key] === "x") {
+	} else if (map.tiles[key] === tiles.wall) {
+		term.bell();
+		return false;
+	} else if (map.tiles[key] === tiles.spike) {
 		init();
 		return false;
 	}
@@ -110,22 +112,23 @@ init = function() {
 	term.moveTo(x, y).red(config.character)
 
 }
+intro = function() {
+	term('Please enter your name: ');
+	 
+	term.inputField(function(error, input) {
+		name = input;
+		config.character = name.substr(0, 1);
+		term("\nWelcome, %s! Would you like to start [y|n]?\n", name);
+		term.yesOrNo({yes: ['y', 'ENTER'], no: ['n']} , function(error, result) {
+		    if (result) {
+		        setupKeypress();
+		        init();
+		    } else {
+		        term.red("Ok, bye");
+		        process.exit();
+		    }
+		});
+	});
+};
 
-term( 'Please enter your name: ' ) ;
- 
-term.inputField(
-    function( error , input ) {
- 		name = input;
- 		config.character = name.substr(0, 1);
- 		term("\nWelcome, %s! Would you like to start [y|n]?\n", name);
-	 	term.yesOrNo( { yes: [ 'y' , 'ENTER' ] , no: [ 'n' ] } , function( error , result ) {
-	        if ( result ) {
-	            setupKeypress();
-	            init();
-	        } else {
-	            term.red( "Ok, bye" ) ;
-	            process.exit();
-	        }
-	    });
-    }
-) ;
+intro();
