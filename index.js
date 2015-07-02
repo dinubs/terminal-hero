@@ -5,6 +5,7 @@ var map = require("./map1.js");
 var tiles = require("./tilesettings.json");
 var config = require("./config.json");
 var character = require("./character.js");
+var enemySprites = require("./enemySprites.js");
 
 // make `process.stdin` begin emitting "keypress" events
 keypress(process.stdin);
@@ -54,6 +55,27 @@ canMove = function(direction) {
 	return true;
 }
 
+updateEnemies = function() {
+  map.enemies.forEach(function(enemy) {
+    var yDir = 1;
+    if (character.y < enemy.y) {
+      yDir = -1;
+    } else if (character.y == enemy.y) {
+      yDir = 0;
+    }
+    var xDir = 1;
+    if (character.x < enemy.x) {
+      xDir = -1;
+    } else if (character.x == enemy.x) {
+      xDir = 0;
+    }
+    term.moveTo(enemy.x, enemy.y)(" ");
+    enemy.x += xDir;
+    enemy.y += yDir;
+    term.moveTo(enemy.x, enemy.y).red(enemySprites.easy);
+  });
+}
+
 move = function(direction) {
 	if (canMove(direction)) {
 		if (direction === "up") {
@@ -72,6 +94,7 @@ move = function(direction) {
 			init();
 		}
 	}
+  updateEnemies();
 }
 
 setupKeypress = function() {
@@ -98,6 +121,9 @@ term.createMessage = function(message) {
 };
 
 init = function(message) {
+  delete require.cache[require.resolve(map.config.mapUrl)];
+  map = require(map.config.mapUrl);
+
 	character.x = map.config.startX;
 	character.y = map.config.startY;
 	term.windowTitle(map.config.name);
@@ -112,6 +138,10 @@ init = function(message) {
 		  term(map.tiles[key].char);
     }
 	}
+  map.enemies.forEach(function(key) {
+    term.moveTo(key.x, key.y);
+    term.red(enemySprites.easy);
+  })
   if (message) {
     term.createMessage(message);
   }
@@ -126,6 +156,7 @@ initWithMap = function(character, newMap, message) {
   init(message);
 }
 intro = function() {
+  console.reset();
 	term('Please enter your name: ');
 	 
 	term.inputField(function(error, input) {
