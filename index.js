@@ -4,7 +4,7 @@ var keypress = require('keypress')
 var map = require("./map1.js");
 var tiles = require("./tilesettings.json");
 var config = require("./config.json");
-var x = 0, y = 0, name = "";
+var character = require("./character.js");
 
 // make `process.stdin` begin emitting "keypress" events
 keypress(process.stdin);
@@ -16,23 +16,23 @@ console.reset = function () {
 removePreviousPlayer = function(direction) {
 	switch (direction) {
 		case "up":
-			term.moveTo(x, y+1)(" ");
+			term.moveTo(character.x, character.y+1)(" ");
 			break;
 		case "down":
-			term.moveTo(x, y-1)(" ");
+			term.moveTo(character.x, character.y-1)(" ");
 			break;
 		case "left":
-			term.moveTo(x+1, y)(" ");
+			term.moveTo(character.x+1, character.y)(" ");
 			break;
 		case "right":
-			term.moveTo(x-1, y)(" ");
+			term.moveTo(character.x-1, character.y)(" ");
 			break;
 	}
 }
 
 canMove = function(direction) {
-	var lX = x;
-	var lY = y;
+	var lX = character.x;
+	var lY = character.y;
 	if (direction === "up") {
 	  	lY--;
 	} else if (direction === "down") {
@@ -43,34 +43,31 @@ canMove = function(direction) {
   		lX++;
 	}
 	var key = lX + "x" + lY;
-	if ((y-1 === 0 && direction === "up") || (y === term.height-1 && direction === "down") ||
-		(x-1===0 && direction === "left") || (x === term.width-1 && direction === "right")) {
+	if ((character.y-1 === 0 && direction === "up") || (character.y === term.height-1 && direction === "down") ||
+		(character.x-1===0 && direction === "left") || (character.x === term.width-1 && direction === "right")) {
 		term.bell();
 		return false;
-	} else if (map.tiles[key] === tiles.wall) {
+	} else if (map.tiles[key]) {
+    return map.tiles[key].event(character, term, map, initWithMap)
 		term.bell();
-		return false;
-	} else if (map.tiles[key] === tiles.spike) {
-		init();
-		return false;
-	}
+	} 
 	return true;
 }
 
 move = function(direction) {
 	if (canMove(direction)) {
 		if (direction === "up") {
-		  	y--;
+	  	character.y--;
 		} else if (direction === "down") {
-		  	y++;
+	  	character.y++;
 		} else if (direction === "left") {
-		  	x--;
+	  	character.x--;
 		} else if (direction == "right") {
-	  		x++;
+  		character.x++;
 		}
 		removePreviousPlayer(direction);
-		term.moveTo(x, y).red(config.character)	
-		if (x === map.config.endX && y === map.config.endY) {
+		term.moveTo(character.x, character.y).brightBlue(character.fChar)	
+		if (character.x === map.config.endX && character.y === map.config.endY) {
 			map = require(map.config.nextMap);
 			init();
 		}
@@ -95,38 +92,55 @@ setupKeypress = function() {
 	process.stdin.resume();
 }
 
-init = function() {
-	x = map.config.startX;
-	y = map.config.startY;
+term.createMessage = function(message) {
+  term.moveTo(1, 26);
+  term.cyan(message);
+};
+
+init = function(message) {
+	character.x = map.config.startX;
+	character.y = map.config.startY;
 	term.windowTitle(map.config.name);
 	console.reset()
 	term.fullscreen(true);
 	for (var key in map.tiles) {
 		var point = key.split("x");
 		term.moveTo(point[0], point[1]);
-		term(map.tiles[key]);
+    if (map.tiles[key].char == tiles.star) {
+      term.brightYellow(map.tiles[key].char);
+    } else {
+		  term(map.tiles[key].char);
+    }
 	}
+  if (message) {
+    term.createMessage(message);
+  }
 
 	term.hideCursor();
 	term.saveCursor();
-	term.moveTo(x, y).red(config.character)
+	term.moveTo(character.x, character.y).brightBlue(character.fChar)
 
+}
+initWithMap = function(character, newMap, message) {
+  map = newMap;
+  init(message);
 }
 intro = function() {
 	term('Please enter your name: ');
 	 
 	term.inputField(function(error, input) {
-		name = input;
-		config.character = name.substr(0, 1);
-		term("\nWelcome, %s! Would you like to start [y|n]?\n", name);
+		character.name = input;
+		character.fChar = character.name.substr(0, 1);
+		term("\nWelcome, %s! Would you like to start [y|n]?\n", character.name);
 		term.yesOrNo({yes: ['y', 'ENTER'], no: ['n']} , function(error, result) {
-		    if (result) {
-		        setupKeypress();
-		        init();
-		    } else {
-		        term.red("Ok, bye");
-		        process.exit();
-		    }
+	    if (result) {
+        setupKeypress();
+        init("Welcome to Terminal Hero. You are the bright blue "+character.fChar+" up above (check the top left)\n"+
+                     "Your goal is to get to the star, this will make you go to the next level, good luck!");
+	    } else {
+        term.red("Ok, bye");
+        process.exit();
+	    }
 		});
 	});
 };
